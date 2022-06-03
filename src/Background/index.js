@@ -26,6 +26,15 @@ const listener = (request, sender, sendResponse) => {
       sendResponse({ data: localStorage.getItem('fixationStrength') });
       break;
     }
+    case 'getTextColor': {
+      sendResponse({ data: localStorage.getItem('textColor') });
+      break;
+    }
+    case 'setTextColor': {
+      localStorage.setItem('textColor', request.data);
+      sendResponse({ success: true });
+      break;
+    }
     case 'setFixationStrength': {
       localStorage.setItem('fixationStrength', request.data);
       sendResponse({ success: true });

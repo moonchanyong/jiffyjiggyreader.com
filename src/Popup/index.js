@@ -5,6 +5,7 @@ const toggleOnDefaultCheckbox = document.getElementById('toggleReadingMode');
 const saccadesIntervalSlider = document.getElementById('saccadesSlider');
 const fixationStrengthSlider = document.getElementById('fixationStrengthSlider');
 const fixationStrengthLabelValue = document.getElementById('fixationStrengthLabelValue');
+const colorPicker = document.getElementById('color-picker');
 
 chrome.runtime.sendMessage(
   { message: 'getSaccadesInterval' },
@@ -45,6 +46,27 @@ chrome.runtime.sendMessage({ type: 'getFixationStrength', message: 'getFixationS
   fixationStrengthLabelValue.textContent = response.data;
   fixationStrengthSlider.value = response.data;
 });
+
+chrome.runtime.sendMessage({ type: 'getTextColor', message: 'getTextColor' }, (response) => {
+  colorPicker.value = response.data
+});
+
+colorPicker.addEventListener('change', (event) => {
+  chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+    chrome.tabs.sendMessage(
+      tabs[0].id,
+      { type: 'setTextColor', data: event.target.value },
+      () => {
+        if (chrome.runtime.lastError) {
+          // no-op
+        }
+      },
+    );
+  })
+  chrome.runtime.sendMessage({ type: 'setTextColor', message: 'setTextColor', data: event.target.value });
+
+  }
+)
 
 toggleBtn.addEventListener('click', async () => {
   setBrModeOnBody(document.body.getAttribute('br-mode') === 'off');

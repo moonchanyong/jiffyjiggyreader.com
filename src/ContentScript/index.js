@@ -4,6 +4,8 @@ const FIXATION_BREAK_RATIO = 0.33;
 const FIXATION_LOWER_BOUND = 0;
 const DEFAULT_SACCADES_INTERVAL = 0;
 const DEFAULT_FIXATION_STRENGTH = 3;
+const DEFAULT_TEXT_COLOR = '#000000';
+const TEXT_COLOR_KEY = '--br-text-color';
 
 // which tag's content should be ignored from bolded
 const IGNORE_NODE_TAGS = ['STYLE', 'SCRIPT'];
@@ -95,10 +97,6 @@ const onChromeRuntimeMessage = (message, sender, sendResponse) => {
       ToggleReading();
       break;
     }
-    case 'getFixationStrength': {
-      sendResponse({ data: document.body.getAttribute('fixation-strength') });
-      break;
-    }
     case 'setFixationStrength': {
       document.body.setAttribute('fixation-strength', message.data);
       sendResponse({ success: true });
@@ -111,6 +109,10 @@ const onChromeRuntimeMessage = (message, sender, sendResponse) => {
     case 'setSaccadesIntervalInDOM': {
       const saccadesInterval = message.data == null ? 0 : message.data;
       document.body.setAttribute('saccades-interval', saccadesInterval);
+      break;
+    }
+    case 'setTextColor': {
+      document.body.style.setProperty(TEXT_COLOR_KEY, message.data);
       break;
     }
     case 'setlineHeight': {
@@ -164,52 +166,55 @@ function addStyles() {
   const style = document.createElement('style');
   style.textContent = `
     .br-bold[fixation-strength="1"] :is(
-      [saccades-interval="0"] br-bold [fixation-strength="1"], 
+      [saccades-interval="0"] br-bold [fixation-strength="1"],
       [saccades-interval="1"] br-bold:nth-of-type(2n+1) [fixation-strength="1"],
       [saccades-interval="2"] br-bold:nth-of-type(3n+1) [fixation-strength="1"],
       [saccades-interval="3"] br-bold:nth-of-type(4n+1) [fixation-strength="1"],
       [saccades-interval="4"] br-bold:nth-of-type(5n+1) [fixation-strength="1"]
-      ) { 
-      font-weight: bold !important; display: inline; line-height: var(--br-line-height,initial); 
+      ) {
+      font-weight: bold !important; display: inline; line-height: var(--br-line-height, initial);
+      color: var(--br-text-color, initial);
     }
 
     .br-bold[fixation-strength="2"] :is(
-      [saccades-interval="0"] br-bold [fixation-strength="1"], 
+      [saccades-interval="0"] br-bold [fixation-strength="1"],
       [saccades-interval="1"] br-bold:nth-of-type(2n+1) [fixation-strength="1"],
       [saccades-interval="2"] br-bold:nth-of-type(3n+1) [fixation-strength="1"],
       [saccades-interval="3"] br-bold:nth-of-type(4n+1) [fixation-strength="1"],
       [saccades-interval="4"] br-bold:nth-of-type(5n+1) [fixation-strength="1"],
 
-      [saccades-interval="0"] br-bold [fixation-strength="2"], 
+      [saccades-interval="0"] br-bold [fixation-strength="2"],
       [saccades-interval="1"] br-bold:nth-of-type(2n+1) [fixation-strength="2"],
       [saccades-interval="2"] br-bold:nth-of-type(3n+1) [fixation-strength="2"],
       [saccades-interval="3"] br-bold:nth-of-type(4n+1) [fixation-strength="2"],
       [saccades-interval="4"] br-bold:nth-of-type(5n+1) [fixation-strength="2"]
-      ) { 
-      font-weight: bold !important; display: inline; line-height: var(--br-line-height,initial); 
+      ) {
+      font-weight: bold !important; display: inline; line-height: var(--br-line-height, initial);
+      color: var(--br-text-color, initial);
     }
 
     .br-bold[fixation-strength="3"] :is(
 
-      [saccades-interval="0"] br-bold [fixation-strength="1"], 
+      [saccades-interval="0"] br-bold [fixation-strength="1"],
       [saccades-interval="1"] br-bold:nth-of-type(2n+1) [fixation-strength="1"],
       [saccades-interval="2"] br-bold:nth-of-type(3n+1) [fixation-strength="1"],
       [saccades-interval="3"] br-bold:nth-of-type(4n+1) [fixation-strength="1"],
       [saccades-interval="4"] br-bold:nth-of-type(5n+1) [fixation-strength="1"],
-      
-      [saccades-interval="0"] br-bold [fixation-strength="2"], 
+
+      [saccades-interval="0"] br-bold [fixation-strength="2"],
       [saccades-interval="1"] br-bold:nth-of-type(2n+1) [fixation-strength="2"],
       [saccades-interval="2"] br-bold:nth-of-type(3n+1) [fixation-strength="2"],
       [saccades-interval="3"] br-bold:nth-of-type(4n+1) [fixation-strength="2"],
       [saccades-interval="4"] br-bold:nth-of-type(5n+1) [fixation-strength="2"]
       ,
-      [saccades-interval="0"] br-bold [fixation-strength="3"], 
+      [saccades-interval="0"] br-bold [fixation-strength="3"],
       [saccades-interval="1"] br-bold:nth-of-type(2n+1) [fixation-strength="3"],
       [saccades-interval="2"] br-bold:nth-of-type(3n+1) [fixation-strength="3"],
       [saccades-interval="3"] br-bold:nth-of-type(4n+1) [fixation-strength="3"],
       [saccades-interval="4"] br-bold:nth-of-type(5n+1) [fixation-strength="3"]
-      ) { 
-      font-weight: bold !important; display: inline; line-height: var(--br-line-height,initial); 
+      ) {
+      font-weight: bold !important; display: inline; line-height: var(--br-line-height, initial);
+      color: var(--br-text-color, initial);
     }
     `;
   document.head.appendChild(style);
@@ -241,5 +246,14 @@ docReady(async () => {
         ? DEFAULT_FIXATION_STRENGTH : response.data;
       document.body.setAttribute('fixation-strength', fixationStrength);
     },
+  );
+
+  chrome.runtime.sendMessage(
+    {message: 'getTextColor'},
+    (response) => {
+      const textColor = response === undefined || response.data == null
+        ? DEFAULT_TEXT_COLOR : response.data;
+      document.body.style.setProperty(TEXT_COLOR_KEY, textColor);
+    }
   );
 });
